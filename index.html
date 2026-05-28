@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Portfolio</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background-color: #f5f0e8;
@@ -17,6 +13,7 @@
       display: flex;
       justify-content: center;
       padding: 60px 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .card {
@@ -25,13 +22,224 @@
       min-height: 100%;
       border-radius: 4px;
       box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
-      padding: 80px 64px;
+      padding: 64px;
     }
+
+    /* ── 헤더 ── */
+    .header { display: flex; align-items: flex-start; gap: 36px; margin-bottom: 64px; }
+    .profile-photo { width: 120px; height: 156px; object-fit: cover; object-position: center top; border-radius: 6px; flex-shrink: 0; }
+    .header-info { flex: 1; padding-top: 6px; }
+    .name { font-size: 26px; font-weight: 700; color: #111; margin-bottom: 6px; }
+    .major { font-size: 14px; color: #999; margin-bottom: 20px; }
+    .header-desc { font-size: 15px; color: #444; line-height: 1.7; }
+
+    /* ── 구분선 ── */
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 0 0 48px 0; }
+
+    /* ── 섹션 ── */
+    .section { margin-bottom: 48px; }
+    .section-title { font-size: 11px; font-weight: 600; color: #bbb; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px; }
+
+    /* ── info rows (개요, education) ── */
+    .info-row { display: flex; align-items: baseline; margin-bottom: 16px; }
+    .info-label { font-size: 13px; font-weight: 600; color: #000; width: 110px; flex-shrink: 0; }
+    .info-value { font-size: 15px; color: #222; line-height: 1.6; }
+
+    /* ── Skills 탭 슬라이더 ── */
+    .skills-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .skills-tab { font-size: 12px; font-weight: 500; color: #aaa; background: none; border: 1px solid #e8e8e8; border-radius: 99px; padding: 4px 14px; cursor: pointer; transition: all 0.15s; }
+    .skills-tab:hover { color: #555; border-color: #ccc; }
+    .skills-tab.active { color: #111; border-color: #111; font-weight: 600; }
+    .skills-slider-wrap { overflow: hidden; }
+    .skills-panels { display: flex; transition: transform 0.3s ease; }
+    .chip-wrap { min-width: 100%; position: relative; }
+    .skills-panel { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; cursor: grab; }
+    .skills-panel::-webkit-scrollbar { display: none; }
+    .skills-panel:active { cursor: grabbing; }
+    .skill-chip { min-width: calc((100% - 24px) / 3); flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid #f0f0f0; border-radius: 8px; }
+    .skill-chip-name { font-size: 14px; font-weight: 500; color: #222; }
+    .skill-chip-level { font-size: 11px; color: #bbb; }
+    .chip-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,0.88); box-shadow: 0 1px 6px rgba(0,0,0,0.1); cursor: pointer; font-size: 13px; color: #555; display: flex; align-items: center; justify-content: center; z-index: 2; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .chip-arrow.visible { opacity: 1; pointer-events: auto; }
+    .chip-arrow-left { left: 4px; }
+    .chip-arrow-right { right: 4px; }
+
+    /* ── 프로젝트 ── */
+    .project-list { display: flex; flex-direction: column; gap: 18px; }
+    .project-link { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 600; color: #c07a3a; text-decoration: none; margin-bottom: 4px; }
+    .project-link:hover { text-decoration: underline; }
+    .project-link .arrow { font-size: 12px; }
+    .project-desc { font-size: 13px; color: #888; line-height: 1.6; }
+
+    /* ── Experience ── */
+    .exp-panel { min-width: 100%; display: flex; flex-direction: column; gap: 12px; }
+    .exp-row { display: flex; align-items: baseline; }
+    .exp-label { font-size: 12px; color: #aaa; width: 90px; flex-shrink: 0; }
+    .exp-value { font-size: 14px; color: #333; line-height: 1.6; }
+
+    /* ── CV ── */
+    .cv-link { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: #111; text-decoration: none; border: 1px solid #ddd; border-radius: 6px; padding: 10px 20px; transition: background 0.15s; }
+    .cv-link:hover { background: #f7f7f7; }
+
+    /* ── Career Goal ── */
+    .goal-list { display: flex; flex-direction: column; gap: 10px; }
+    .goal-item { display: flex; align-items: baseline; gap: 10px; font-size: 15px; color: #222; }
+    .goal-item::before { content: "→"; font-size: 13px; color: #ccc; flex-shrink: 0; }
+
+    /* ── Contact ── */
+    .contact-bar { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; padding-top: 40px; border-top: 1px solid #f0f0f0; margin-top: 8px; }
+    .contact-bar a { color: #ccc; text-decoration: none; transition: color 0.15s; display: flex; align-items: center; }
+    .contact-bar a:hover { color: #333; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <!-- 내용이 여기 들어갑니다 -->
-  </div>
+  <div class="card"></div>
+
+  <script src="data/data.js"></script>
+  <script>
+    const card = document.querySelector('.card');
+
+    function infoRows(items) {
+      return items.map(r => `
+        <div class="info-row">
+          <span class="info-label">${r.label}</span>
+          <span class="info-value">${r.value}</span>
+        </div>`).join('');
+    }
+
+    function section(title, content) {
+      return `
+        <hr class="divider" />
+        <div class="section">
+          <div class="section-title"><strong>${title}</strong></div>
+          ${content}
+        </div>`;
+    }
+
+    function renderSkills() {
+      const tabs = DATA.skills.map((s, i) =>
+        `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${s.category}</button>`
+      ).join('');
+
+      const panels = DATA.skills.map((s, pi) =>
+        `<div class="chip-wrap">
+          <div class="skills-panel" id="chipPanel${pi}">${s.items.map(item => `
+            <div class="skill-chip">
+              <span class="skill-chip-name">${item.name}</span>
+              <span class="skill-chip-level">${item.level || item.Level || '—'}</span>
+            </div>`).join('')}
+          </div>
+          <button class="chip-arrow chip-arrow-left" data-pi="${pi}">←</button>
+          <button class="chip-arrow chip-arrow-right" data-pi="${pi}">→</button>
+        </div>`
+      ).join('');
+
+      return `
+        <div class="skills-tabs" id="skillsTabs">${tabs}</div>
+        <div class="skills-slider-wrap">
+          <div class="skills-panels" id="skillsPanels">${panels}</div>
+        </div>`;
+    }
+
+    function renderProjects() {
+      return `<div class="project-list">${DATA.projects.map(p => `
+        <div class="project-item">
+          <a class="project-link" href="${p.url}" target="_blank">${p.name} <span class="arrow">↗</span></a>
+          <div class="project-desc">${p.desc}</div>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    function renderExperience() {
+      const tabs = DATA.experience.map((e, i) =>
+        `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${e.tab}</button>`
+      ).join('');
+
+      const panels = DATA.experience.map(e => `
+        <div class="exp-panel">
+          <div class="exp-row"><span class="exp-label">유형</span><span class="exp-value">${e.유형}</span></div>
+          <div class="exp-row"><span class="exp-label">기간</span><span class="exp-value">${e.기간}</span></div>
+          <div class="exp-row"><span class="exp-label">활동 내용</span><span class="exp-value">${e.활동내용}</span></div>
+          <div class="exp-row"><span class="exp-label">성과</span><span class="exp-value">${e.성과}</span></div>
+        </div>`).join('');
+
+      return `
+        <div class="skills-tabs" id="expTabs">${tabs}</div>
+        <div class="skills-slider-wrap">
+          <div class="skills-panels" id="expPanels">${panels}</div>
+        </div>`;
+    }
+
+    function renderContact() {
+      return `
+        <div class="contact-bar">
+          <a href="mailto:${DATA.contact.email}" style="font-size:13px; color:#aaa;">${DATA.contact.email}</a>
+          <a href="${DATA.contact.github}" target="_blank" title="GitHub">
+            <img src="data/github.png" alt="GitHub" style="width:20px;height:20px;opacity:0.35;transition:opacity 0.15s;"
+              onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='0.35'" />
+          </a>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="header">
+        <img class="profile-photo" src="${DATA.profile.photo}" alt="프로필 사진" />
+        <div class="header-info">
+          <div class="name">${DATA.profile.name}</div>
+          <div class="major">${DATA.profile.major}</div>
+          <div class="header-desc">${DATA.profile.desc}</div>
+        </div>
+      </div>
+
+      ${section('개요', infoRows(DATA.about))}
+      ${section('Education', infoRows(DATA.education))}
+      ${section('Skills', renderSkills())}
+      ${section('Projects', renderProjects())}
+      ${section('Experience', renderExperience())}
+      ${section('CV / Resume', `<a class="cv-link" href="${DATA.cv.file}" download>↓ Download My Resume</a>`)}
+      ${section('Career Goal', `<div class="goal-list">${DATA.careerGoals.map(g => `<div class="goal-item">${g}</div>`).join('')}</div>`)}
+      ${renderContact()}
+    `;
+
+    function initSlider(tabsId, panelsId) {
+      const tabsEl = document.getElementById(tabsId);
+      const panelsEl = document.getElementById(panelsId);
+      tabsEl.querySelectorAll('.skills-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabsEl.querySelectorAll('.skills-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          panelsEl.style.transform = `translateX(-${tab.dataset.index * 100}%)`;
+        });
+      });
+    }
+
+    initSlider('skillsTabs', 'skillsPanels');
+    initSlider('expTabs', 'expPanels');
+
+    DATA.skills.forEach((s, pi) => {
+      const panel = document.getElementById(`chipPanel${pi}`);
+      const wrap  = panel.parentElement;
+      const leftBtn  = wrap.querySelector('.chip-arrow-left');
+      const rightBtn = wrap.querySelector('.chip-arrow-right');
+
+      function updateArrows() {
+        leftBtn.classList.toggle('visible', panel.scrollLeft > 0);
+        rightBtn.classList.toggle('visible', panel.scrollLeft + panel.clientWidth < panel.scrollWidth - 1);
+      }
+
+      panel.addEventListener('scroll', updateArrows);
+      leftBtn.addEventListener('click',  () => panel.scrollBy({ left: -panel.clientWidth * 0.8, behavior: 'smooth' }));
+      rightBtn.addEventListener('click', () => panel.scrollBy({ left:  panel.clientWidth * 0.8, behavior: 'smooth' }));
+
+      let isDown = false, startX, scrollLeft;
+      panel.addEventListener('mousedown', e => { isDown = true; startX = e.pageX - panel.offsetLeft; scrollLeft = panel.scrollLeft; });
+      panel.addEventListener('mouseleave', () => isDown = false);
+      panel.addEventListener('mouseup',    () => isDown = false);
+      panel.addEventListener('mousemove',  e => { if (!isDown) return; e.preventDefault(); panel.scrollLeft = scrollLeft - (e.pageX - panel.offsetLeft - startX); });
+
+      updateArrows();
+    });
+
+  </script>
 </body>
 </html>
