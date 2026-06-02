@@ -40,10 +40,15 @@
     .section { margin-bottom: 48px; }
     .section-title { font-size: 11px; font-weight: 600; color: #bbb; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 24px; }
 
-    /* ── info rows (개요, education) ── */
+    /* ── info rows (education) ── */
     .info-row { display: flex; align-items: baseline; margin-bottom: 16px; }
     .info-label { font-size: 13px; font-weight: 600; color: #000; width: 110px; flex-shrink: 0; }
     .info-value { font-size: 15px; color: #222; line-height: 1.6; }
+
+    /* ── about 한 줄 ── */
+    .about-line { font-size: 14px; color: #444; line-height: 1.8; }
+    .about-line .about-item + .about-item::before { content: " · "; color: #ccc; margin: 0 4px; }
+    .about-label { font-size: 12px; font-weight: 600; color: #999; margin-right: 4px; }
 
     /* ── Skills 탭 슬라이더 ── */
     .skills-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -56,9 +61,11 @@
     .skills-panel { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; cursor: grab; }
     .skills-panel::-webkit-scrollbar { display: none; }
     .skills-panel:active { cursor: grabbing; }
-    .skill-chip { min-width: calc((100% - 24px) / 3); flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1px solid #f0f0f0; border-radius: 8px; }
+    .skill-chip { min-width: calc((100% - 24px) / 3); flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border: 1px solid #f0f0f0; border-radius: 8px; }
     .skill-chip-name { font-size: 14px; font-weight: 500; color: #222; }
-    .skill-chip-level { font-size: 11px; color: #bbb; }
+    .skill-gauge-wrap { height: 3px; background: #f0f0f0; border-radius: 99px; overflow: hidden; }
+    .skill-gauge-bar { height: 100%; border-radius: 99px; background: #c07a3a; transition: width 0.4s ease; }
+    .skill-gauge-label { font-size: 10px; color: #bbb; margin-top: 4px; }
     .chip-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; border: none; background: rgba(255,255,255,0.88); box-shadow: 0 1px 6px rgba(0,0,0,0.1); cursor: pointer; font-size: 13px; color: #555; display: flex; align-items: center; justify-content: center; z-index: 2; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
     .chip-arrow.visible { opacity: 1; pointer-events: auto; }
     .chip-arrow-left { left: 4px; }
@@ -116,6 +123,9 @@
         </div>`;
     }
 
+    const levelMap  = { '하': 33, '중': 60, '중상': 80, '상': 100 };
+    const levelLabel = { '하': 'Basic', '중': 'Intermediate', '중상': 'Advanced', '상': 'Expert' };
+
     function renderSkills() {
       const tabs = DATA.skills.map((s, i) =>
         `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${s.category}</button>`
@@ -123,11 +133,16 @@
 
       const panels = DATA.skills.map((s, pi) =>
         `<div class="chip-wrap">
-          <div class="skills-panel" id="chipPanel${pi}">${s.items.map(item => `
+          <div class="skills-panel" id="chipPanel${pi}">${s.items.map(item => {
+            const lvText = item.level || item.Level || '';
+            const pct = levelMap[lvText] ?? 0;
+            return `
             <div class="skill-chip">
               <span class="skill-chip-name">${item.name}</span>
-              <span class="skill-chip-level">${item.level || item.Level || '—'}</span>
-            </div>`).join('')}
+              <div class="skill-gauge-wrap"><div class="skill-gauge-bar" style="width:${pct}%"></div></div>
+              <span class="skill-gauge-label">${levelLabel[lvText] ?? ''}</span>
+            </div>`;
+          }).join('')}
           </div>
           <button class="chip-arrow chip-arrow-left" data-pi="${pi}">←</button>
           <button class="chip-arrow chip-arrow-right" data-pi="${pi}">→</button>
@@ -191,12 +206,12 @@
         </div>
       </div>
 
-      ${section('개요', infoRows(DATA.about))}
+      ${section('개요', `<div class="about-line">${DATA.about.map(r => `<span class="about-item"><span class="about-label">${r.label}</span>${r.value}</span>`).join('')}</div>`)}
       ${section('Education', infoRows(DATA.education))}
       ${section('Skills', renderSkills())}
       ${section('Projects', renderProjects())}
       ${section('Experience', renderExperience())}
-      ${section('CV / Resume', `<a class="cv-link" href="${DATA.cv.file}" download>↓ Download My Resume</a>`)}
+      ${section('CV / Resume', `<a class="cv-link" href="${DATA.cv.file}" download="${DATA.cv.filename}">↓ Download Portfolio</a>`)}
       ${section('Career Goal', `<div class="goal-list">${DATA.careerGoals.map(g => `<div class="goal-item">${g}</div>`).join('')}</div>`)}
       ${renderContact()}
     `;

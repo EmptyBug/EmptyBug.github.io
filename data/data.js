@@ -3,16 +3,12 @@ const DATA = {
   profile: {
     name: "채지운",
     photo: "data/face.jpg",
-    major: "인공지능 공학과",
-    desc: "백엔드와 서버, 그리고 스스로 판단하는 AI에 관심이 많습니다.",
+    major: "AI.SW학부(인공지능공학전공)",
+    desc: "백엔드와 서버, 그리고 AI.",
   },
 
   about: [
-    { label: "전공",       value: "인공지능 공학과" },
-    { label: "관심 분야",  value: "백엔드 · 서버 · 자율 행동 AI" },
-    { label: "진로 목표",  value: "SI · SM · 풀스택" },
-    { label: "학습 중",    value: "Spring · Node.js" },
-    { label: "AI 관심",    value: "타의적이지 않고 자의적인 AI" },
+    { label: "인공지능 공학을 전공하며, AI Persona에 대해 관심이있습니다. 저를 위한 개발하는 삶을 목표로 SI, SM에 관심을 가지며 관련 지식을 습득하고있습니다." , value : ""}
   ],
 
   education: [
@@ -53,7 +49,7 @@ const DATA = {
     {
       category: "Database",
       items: [
-        { name: "MySQL",  level: "중" },
+        { name: "MySQL",  level: "하" },
         { name: "SQLite", level: "하" },
         { name: "PostgreSQL", level: "하" }
       ],
@@ -61,31 +57,29 @@ const DATA = {
   ],
 
   projects: [
-    { name: "ttt", desc: "ttt", url: "#" },
-    { name: "ttt", desc: "ttt", url: "#" },
-    { name: "ttt", desc: "ttt", url: "#" },
+    { name: "DeepFurnace", desc: "AI 문제 풀이 사이트", url: "https://deepfurnace.com" },
+    { name: "DazzaGozza", desc: "용량 제한 없는 파일 공유 사이트", url: "https://dazzagozza.com" },
   ],
 
   experience: [
-    { tab: "ttt", 유형: "ttt", 기간: "ttt", 활동내용: "ttt", 성과: "ttt" },
-    { tab: "ttt", 유형: "ttt", 기간: "ttt", 활동내용: "ttt", 성과: "ttt" },
-    { tab: "ttt", 유형: "ttt", 기간: "ttt", 활동내용: "ttt", 성과: "ttt" },
+    { tab: "교내 코드포스 경진대회", 유형: "알고리즘 대회", 기간: "26/04/08", 활동내용: "참여", 성과: "3등" },
+    { tab: "AI문제 사이트", 유형: "Web", 기간: "26/05~", 활동내용: "백엔드", 성과: "제작중" },
+    { tab: "itchio 게임잼", 유형: "게임 해커톤", 기간: "25/06~", 활동내용: "전체", 성과: "순위권 외" },
   ],
 
   cv: {
-    file: "./ttttttttttttt.pdf",
+    file: "./index.html",
+    filename: "채지운_포트폴리오.html",
   },
 
   careerGoals: [
-    "ttttttttttttt",
-    "ttttttttttttt",
-    "ttttttttttttt",
-    "ttttttttttttt",
+    "졸업",
+    "Project DF"
   ],
 
   contact: {
-    email:  "ttttttttttttt@email.com",
-    github: "https://github.com/ttttttttttttt",
+    email:  "r14n7jng@email.com",
+    github: "https://github.com/EmptyBug",
   },
 
 };
