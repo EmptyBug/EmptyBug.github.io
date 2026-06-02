@@ -17,6 +17,7 @@
     }
 
     .card {
+      position: relative;
       background-color: #ffffff;
       width: 680px;
       min-height: 100%;
@@ -24,6 +25,24 @@
       box-shadow: 0 4px 32px rgba(0, 0, 0, 0.08);
       padding: 64px;
     }
+
+    /* ── 언어 토글 ── */
+    .lang-toggle {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #aaa;
+      background: none;
+      border: 1px solid #e0e0e0;
+      border-radius: 99px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .lang-toggle:hover { color: #333; border-color: #bbb; }
 
     /* ── 헤더 ── */
     .header { display: flex; align-items: flex-start; gap: 36px; margin-bottom: 64px; }
@@ -46,9 +65,7 @@
     .info-value { font-size: 15px; color: #222; line-height: 1.6; }
 
     /* ── about 한 줄 ── */
-    .about-line { font-size: 14px; color: #444; line-height: 1.8; }
-    .about-line .about-item + .about-item::before { content: " · "; color: #ccc; margin: 0 4px; }
-    .about-label { font-size: 12px; font-weight: 600; color: #999; margin-right: 4px; }
+    .about-text { font-size: 14px; color: #444; line-height: 1.8; }
 
     /* ── Skills 탭 슬라이더 ── */
     .skills-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
@@ -97,6 +114,71 @@
     .contact-bar { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; padding-top: 40px; border-top: 1px solid #f0f0f0; margin-top: 8px; }
     .contact-bar a { color: #ccc; text-decoration: none; transition: color 0.15s; display: flex; align-items: center; }
     .contact-bar a:hover { color: #333; }
+
+    /* ── 인쇄 전용 레이블 ── */
+    .print-label { display: none; }
+
+    /* ── 인쇄 / PDF ── */
+    @media print {
+      body { background: #fff; padding: 0; display: block; }
+
+      .card {
+        width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 32px 48px;
+      }
+
+      /* 인터랙티브 요소 숨김 */
+      .lang-toggle,
+      .chip-arrow,
+      .skills-tabs { display: none !important; }
+
+      /* 슬라이더 → 그리드 전환 */
+      .skills-slider-wrap { overflow: visible; }
+
+      #skillsPanels {
+        flex-wrap: wrap;
+        transform: none !important;
+      }
+      .chip-wrap {
+        min-width: 48%;
+        margin-bottom: 20px;
+        break-inside: avoid;
+      }
+
+      /* 경험 슬라이더 → 세로 나열 */
+      #expPanels {
+        flex-direction: column;
+        transform: none !important;
+      }
+      .exp-panel {
+        min-width: 100%;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        break-inside: avoid;
+      }
+
+      /* 카테고리·탭 인쇄 레이블 */
+      .print-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #bbb;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      /* 게이지 색 강제 출력 */
+      .skill-gauge-bar {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .section, .project-item { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -105,6 +187,10 @@
   <script src="data/data.js"></script>
   <script>
     const card = document.querySelector('.card');
+    let currentLang = 'ko';
+
+    const levelMap   = { '하': 33, '중': 60, '중상': 80, '상': 100 };
+    const levelLabel = { '하': 'Basic', '중': 'Intermediate', '중상': 'Advanced', '상': 'Expert' };
 
     function infoRows(items) {
       return items.map(r => `
@@ -123,9 +209,6 @@
         </div>`;
     }
 
-    const levelMap  = { '하': 33, '중': 60, '중상': 80, '상': 100 };
-    const levelLabel = { '하': 'Basic', '중': 'Intermediate', '중상': 'Advanced', '상': 'Expert' };
-
     function renderSkills() {
       const tabs = DATA.skills.map((s, i) =>
         `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${s.category}</button>`
@@ -133,14 +216,14 @@
 
       const panels = DATA.skills.map((s, pi) =>
         `<div class="chip-wrap">
+          <div class="print-label">${s.category}</div>
           <div class="skills-panel" id="chipPanel${pi}">${s.items.map(item => {
-            const lvText = item.level || item.Level || '';
-            const pct = levelMap[lvText] ?? 0;
+            const pct = levelMap[item.level] ?? 0;
             return `
             <div class="skill-chip">
               <span class="skill-chip-name">${item.name}</span>
               <div class="skill-gauge-wrap"><div class="skill-gauge-bar" style="width:${pct}%"></div></div>
-              <span class="skill-gauge-label">${levelLabel[lvText] ?? ''}</span>
+              <span class="skill-gauge-label">${levelLabel[item.level] ?? ''}</span>
             </div>`;
           }).join('')}
           </div>
@@ -156,27 +239,33 @@
         </div>`;
     }
 
-    function renderProjects() {
+    function renderProjects(lang) {
       return `<div class="project-list">${DATA.projects.map(p => `
         <div class="project-item">
           <a class="project-link" href="${p.url}" target="_blank">${p.name} <span class="arrow">↗</span></a>
-          <div class="project-desc">${p.desc}</div>
+          <div class="project-desc">${p[lang].desc}</div>
         </div>`).join('')}
       </div>`;
     }
 
-    function renderExperience() {
+    function renderExperience(lang) {
+      const T = DATA.i18n[lang];
       const tabs = DATA.experience.map((e, i) =>
-        `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${e.tab}</button>`
+        `<button class="skills-tab${i === 0 ? ' active' : ''}" data-index="${i}">${e[lang].tab}</button>`
       ).join('');
 
-      const panels = DATA.experience.map(e => `
+      const panels = DATA.experience.map(e => {
+        const d = e[lang];
+        const L = T.expLabels;
+        return `
         <div class="exp-panel">
-          <div class="exp-row"><span class="exp-label">유형</span><span class="exp-value">${e.유형}</span></div>
-          <div class="exp-row"><span class="exp-label">기간</span><span class="exp-value">${e.기간}</span></div>
-          <div class="exp-row"><span class="exp-label">활동 내용</span><span class="exp-value">${e.활동내용}</span></div>
-          <div class="exp-row"><span class="exp-label">성과</span><span class="exp-value">${e.성과}</span></div>
-        </div>`).join('');
+          <div class="print-label">${d.tab}</div>
+          <div class="exp-row"><span class="exp-label">${L.type}</span><span class="exp-value">${d.type}</span></div>
+          <div class="exp-row"><span class="exp-label">${L.period}</span><span class="exp-value">${d.period}</span></div>
+          <div class="exp-row"><span class="exp-label">${L.activity}</span><span class="exp-value">${d.activity}</span></div>
+          <div class="exp-row"><span class="exp-label">${L.result}</span><span class="exp-value">${d.result}</span></div>
+        </div>`;
+      }).join('');
 
       return `
         <div class="skills-tabs" id="expTabs">${tabs}</div>
@@ -196,28 +285,69 @@
         </div>`;
     }
 
-    card.innerHTML = `
-      <div class="header">
-        <img class="profile-photo" src="${DATA.profile.photo}" alt="프로필 사진" />
-        <div class="header-info">
-          <div class="name">${DATA.profile.name}</div>
-          <div class="major">${DATA.profile.major}</div>
-          <div class="header-desc">${DATA.profile.desc}</div>
-        </div>
-      </div>
+    function render(lang) {
+      const T = DATA.i18n[lang];
+      const p = DATA.profile[lang];
+      const cv = DATA.cv[lang];
 
-      ${section('개요', `<div class="about-line">${DATA.about.map(r => `<span class="about-item"><span class="about-label">${r.label}</span>${r.value}</span>`).join('')}</div>`)}
-      ${section('Education', infoRows(DATA.education))}
-      ${section('Skills', renderSkills())}
-      ${section('Projects', renderProjects())}
-      ${section('Experience', renderExperience())}
-      ${section('CV / Resume', `<a class="cv-link" href="${DATA.cv.file}" download="${DATA.cv.filename}">↓ Download Portfolio</a>`)}
-      ${section('Career Goal', `<div class="goal-list">${DATA.careerGoals.map(g => `<div class="goal-item">${g}</div>`).join('')}</div>`)}
-      ${renderContact()}
-    `;
+      card.innerHTML = `
+        <button class="lang-toggle" id="langToggle">${lang === 'ko' ? 'EN' : 'KR'}</button>
+
+        <div class="header">
+          <img class="profile-photo" src="${DATA.profile.photo}" alt="프로필 사진" />
+          <div class="header-info">
+            <div class="name">${p.name}</div>
+            <div class="major">${p.major}</div>
+            <div class="header-desc">${p.desc}</div>
+          </div>
+        </div>
+
+        ${section(T.overview,   `<div class="about-text">${DATA.about[lang]}</div>`)}
+        ${section(T.education,  infoRows(DATA.education[lang]))}
+        ${section(T.skills,     renderSkills())}
+        ${section(T.projects,   renderProjects(lang))}
+        ${section(T.experience, renderExperience(lang))}
+        ${section(T.cv,         `<button class="cv-link" onclick="window.print()">${cv.label}</button>`)}
+        ${section(T.careerGoal, `<div class="goal-list">${DATA.careerGoals[lang].map(g => `<div class="goal-item">${g}</div>`).join('')}</div>`)}
+        ${renderContact()}
+      `;
+
+      document.getElementById('langToggle').addEventListener('click', () => {
+        currentLang = currentLang === 'ko' ? 'en' : 'ko';
+        document.documentElement.lang = currentLang;
+        render(currentLang);
+      });
+
+      initSlider('skillsTabs', 'skillsPanels');
+      initSlider('expTabs', 'expPanels');
+
+      DATA.skills.forEach((s, pi) => {
+        const panel = document.getElementById(`chipPanel${pi}`);
+        const wrap      = panel.parentElement;
+        const leftBtn   = wrap.querySelector('.chip-arrow-left');
+        const rightBtn  = wrap.querySelector('.chip-arrow-right');
+
+        function updateArrows() {
+          leftBtn.classList.toggle('visible',  panel.scrollLeft > 0);
+          rightBtn.classList.toggle('visible', panel.scrollLeft + panel.clientWidth < panel.scrollWidth - 1);
+        }
+
+        panel.addEventListener('scroll', updateArrows);
+        leftBtn.addEventListener('click',  () => panel.scrollBy({ left: -panel.clientWidth * 0.8, behavior: 'smooth' }));
+        rightBtn.addEventListener('click', () => panel.scrollBy({ left:  panel.clientWidth * 0.8, behavior: 'smooth' }));
+
+        let isDown = false, startX, scrollLeft;
+        panel.addEventListener('mousedown',  e => { isDown = true; startX = e.pageX - panel.offsetLeft; scrollLeft = panel.scrollLeft; });
+        panel.addEventListener('mouseleave', () => isDown = false);
+        panel.addEventListener('mouseup',    () => isDown = false);
+        panel.addEventListener('mousemove',  e => { if (!isDown) return; e.preventDefault(); panel.scrollLeft = scrollLeft - (e.pageX - panel.offsetLeft - startX); });
+
+        updateArrows();
+      });
+    }
 
     function initSlider(tabsId, panelsId) {
-      const tabsEl = document.getElementById(tabsId);
+      const tabsEl   = document.getElementById(tabsId);
       const panelsEl = document.getElementById(panelsId);
       tabsEl.querySelectorAll('.skills-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -228,33 +358,7 @@
       });
     }
 
-    initSlider('skillsTabs', 'skillsPanels');
-    initSlider('expTabs', 'expPanels');
-
-    DATA.skills.forEach((s, pi) => {
-      const panel = document.getElementById(`chipPanel${pi}`);
-      const wrap  = panel.parentElement;
-      const leftBtn  = wrap.querySelector('.chip-arrow-left');
-      const rightBtn = wrap.querySelector('.chip-arrow-right');
-
-      function updateArrows() {
-        leftBtn.classList.toggle('visible', panel.scrollLeft > 0);
-        rightBtn.classList.toggle('visible', panel.scrollLeft + panel.clientWidth < panel.scrollWidth - 1);
-      }
-
-      panel.addEventListener('scroll', updateArrows);
-      leftBtn.addEventListener('click',  () => panel.scrollBy({ left: -panel.clientWidth * 0.8, behavior: 'smooth' }));
-      rightBtn.addEventListener('click', () => panel.scrollBy({ left:  panel.clientWidth * 0.8, behavior: 'smooth' }));
-
-      let isDown = false, startX, scrollLeft;
-      panel.addEventListener('mousedown', e => { isDown = true; startX = e.pageX - panel.offsetLeft; scrollLeft = panel.scrollLeft; });
-      panel.addEventListener('mouseleave', () => isDown = false);
-      panel.addEventListener('mouseup',    () => isDown = false);
-      panel.addEventListener('mousemove',  e => { if (!isDown) return; e.preventDefault(); panel.scrollLeft = scrollLeft - (e.pageX - panel.offsetLeft - startX); });
-
-      updateArrows();
-    });
-
+    render(currentLang);
   </script>
 </body>
 </html>
