@@ -78,7 +78,7 @@ const DATA = {
     {
       name: "DeepFurnace",
       url: "https://deepfurnace.com",
-      ko: { desc: "AI 문제 풀이 사이트" },
+      ko: { desc: "AI 문제 풀이 사이트 - 제작중" },
       en: { desc: "AI problem-solving platform" },
     },
     {
