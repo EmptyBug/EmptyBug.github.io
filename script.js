@@ -45,10 +45,92 @@ async function loadFS() {
     if (r.ok) dir.$url = (await r.text()).split('\n')[0].trim();
   }));
 
+  setPaths(root, 'explore');
   FS = root;
 }
 
+// 폴더마다 저장소 안 경로를 $path 로 기록 (about 페이지 주소를 만들 때 사용)
+function setPaths(dir, path) {
+  dir.$path = path;
+  for (const [name, v] of entries(dir)) if (v) setPaths(v, `${path}/${name}`);
+}
+
 const LOADING = '폴더 정보를 불러오는 중입니다.';
+
+// ── PDF용 문서: 프로필 + 폴더 구조 + 각 about 내용을 #print-doc 에 조립 ──
+const printDoc = document.getElementById('print-doc');
+let printReady = false;
+
+async function fetchAbout(dir) {
+  const url = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${encodeURI(dir.$path)}/about/index.html`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  doc.querySelectorAll('script').forEach(s => s.remove());
+  // 상대 경로 이미지·링크를 about 페이지 기준 절대 주소로
+  doc.querySelectorAll('[src], [href]').forEach(el => {
+    for (const attr of ['src', 'href']) {
+      const v = el.getAttribute(attr);
+      if (v) el.setAttribute(attr, new URL(v, url).href);
+    }
+  });
+  const box = document.createElement('div');
+  box.className = 'print-about';
+  box.append(...doc.body.childNodes);
+  return box;
+}
+
+async function buildPrintDoc() {
+  // about 페이지를 전부 병렬로 받아 둔다
+  const abouts = new Map();
+  const collect = dir => {
+    if (dir.$about) abouts.set(dir, fetchAbout(dir));
+    for (const [, v] of entries(dir)) if (v) collect(v);
+  };
+  collect(FS);
+  for (const [dir, p] of abouts) abouts.set(dir, await p.catch(() => null));
+
+  printDoc.textContent = '';
+
+  // 프로필
+  const profile = document.createElement('div');
+  profile.className = 'print-profile';
+  const img = document.createElement('img');
+  img.src = 'data/face.jpg';
+  const info = document.createElement('div');
+  PROFILE.forEach(line => {
+    const p = document.createElement('p');
+    p.textContent = line;
+    info.append(p);
+  });
+  profile.append(img, info);
+  printDoc.append(profile);
+  if (abouts.get(FS)) printDoc.append(abouts.get(FS));
+
+  // 폴더 트리 (깊이에 따라 h2 / h3 / h4)
+  const render = (dir, depth, parentEl) => {
+    for (const [name, v] of entries(dir)) {
+      const section = document.createElement('section');
+      const h = document.createElement('h' + Math.min(depth + 2, 6));
+      h.textContent = name;
+      section.append(h);
+      if (v) {
+        if (v.$url) {
+          const a = document.createElement('a');
+          a.href = a.textContent = v.$url;
+          section.append(a);
+        }
+        if (abouts.get(v)) section.append(abouts.get(v));
+        render(v, depth + 1, section);
+      }
+      parentEl.append(section);
+    }
+  };
+  render(FS, 0, printDoc);
+
+  printReady = true;
+}
 
 // C:\Users 에 들어가면 보여줄 개인정보 (내용은 추후 채우기)
 const PROFILE = [
@@ -89,6 +171,14 @@ const commands = {
       if (!FS) return LOADING;
       if (!cwdDir().$about) return '이 폴더에 대한 설명이 아직 없습니다.';
       openAbout();
+    },
+  },
+  pdf: {
+    desc: "포트폴리오를 PDF로 저장합니다. (인쇄창에서 'PDF로 저장')",
+    run: () => {
+      if (!printReady) return LOADING;
+      window.print();
+      return "인쇄창에서 대상을 'PDF로 저장'으로 선택하세요.";
     },
   },
   dir: {
@@ -149,7 +239,7 @@ function updatePrompt() {
   promptEl.textContent = cwdPath() + '>';
 }
 
-function print(text) {
+function write(text) {
   output.append(text + '\n');
   body.scrollTop = body.scrollHeight;
 }
@@ -159,7 +249,7 @@ input.addEventListener('keydown', e => {
 
   const line = input.value.trim();
   input.value = '';
-  print(promptEl.textContent + line);
+  write(promptEl.textContent + line);
 
   if (line) {
     // cmd처럼 "cd.." 도 "cd .." 로 인식
@@ -170,8 +260,8 @@ input.addEventListener('keydown', e => {
       : `'${name}'은(는) 내부 또는 외부 명령, 실행할 수 있는 프로그램, 또는\n배치 파일이 아닙니다.`;
     // 출력할 게 없는 명령어(clear, cd 등)는 빈 줄도 찍지 않는다
     if (result !== undefined) {
-      print(result);
-      print('');
+      write(result);
+      write('');
     }
   }
 });
@@ -261,7 +351,9 @@ window.addEventListener('blur', () => {
   });
 });
 
-print('help 를 입력하면 사용 가능한 명령어를 볼 수 있습니다.');
-print('현재 포트폴리오를 개발 중이라 아직 없는 내용이 있습니다.\n');
+write('help 를 입력하면 사용 가능한 명령어를 볼 수 있습니다.');
+write('현재 포트폴리오를 개발 중이라 아직 없는 내용이 있습니다.\n');
 
-loadFS().catch(() => print('폴더 정보를 불러오지 못했습니다. 새로고침해 주세요.\n'));
+loadFS()
+  .then(buildPrintDoc)
+  .catch(() => write('폴더 정보를 불러오지 못했습니다. 새로고침해 주세요.\n'));

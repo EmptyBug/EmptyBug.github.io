@@ -142,3 +142,34 @@ body {
   font: inherit;
   caret-color: #cccccc;
 }
+
+/* ── PDF(인쇄)용 문서: 화면에서는 숨기고 인쇄할 때만 보인다 ── */
+#print-doc { display: none; }
+
+@media print {
+  @page { margin: 20mm; }
+
+  body { height: auto; overflow: visible; }
+  .cmd, .browser { display: none !important; }
+
+  #print-doc {
+    display: block;
+    color: #111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  .print-profile { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 24px; }
+  .print-profile img { width: 90px; }
+
+  #print-doc h2 { font-size: 16pt; margin: 28px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #ccc; }
+  #print-doc h3 { font-size: 13pt; margin: 16px 0 4px; }
+  #print-doc h4, #print-doc h5, #print-doc h6 { font-size: 11pt; margin: 12px 0 4px; }
+  #print-doc h2, #print-doc h3, #print-doc h4 { break-after: avoid; }
+
+  #print-doc section section { margin-left: 12px; break-inside: avoid; }
+  #print-doc a { color: #111; font-size: 10pt; }
+  .print-about { margin: 4px 0; }
+  .print-about img { max-width: 100%; }
+}
