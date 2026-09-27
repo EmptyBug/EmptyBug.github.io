@@ -5,24 +5,50 @@ const output = document.getElementById('cmd-output');
 const input  = document.getElementById('cmd-input');
 const promptEl = document.getElementById('cmd-prompt');
 
-// explore/ 폴더 구조 (브라우저는 폴더 내용을 직접 읽을 수 없어서 여기에 적어 둔다)
-// 폴더는 { }, 파일은 null. explore/에 파일을 추가하면 여기에도 추가할 것
-// 폴더에 $url 을 넣으면 cd로 들어갈 때 그 사이트를 새 탭에서 연다 ($로 시작하는 키는 dir에 안 나옴)
-// $about: true 는 그 폴더 안에 about/ 폴더(index.html)가 있다는 뜻 → about 입력 시 새 창으로 띄운다
-//   (about/ 폴더는 dir에 안 나오고 cd로 못 들어감. about/ 폴더를 만들면 여기에도 $about: true 추가할 것)
-const FS = {
-  $about: true,
-  Projects: {         // 개발한 것
-    $about: true,
-    DeepFurnace: { $url: 'https://deepfurnace.com', $about: true },
-    DazzaGozza:  { $url: 'https://dazzagozza.com' },
-  },
-  InProgress:   {},   // 개발 중인 것
-  Skills:       {},   // 공부한 기술
-  Experience:   {},   // 활동·대회
-  Education:    {},   // 학력
-  Certificates: {},   // 자격증
-};
+// explore/ 폴더 구조는 페이지를 열 때 GitHub API로 받아 온다 (push된 내용 기준)
+// 폴더 규칙:
+//   하위 폴더·파일 → dir에 보이고 cd로 이동
+//   about/        → 그 폴더의 설명 페이지. dir에 안 보이고 about 명령어로 열림 ($about)
+//   url.txt       → 첫 줄의 주소를 cd로 들어갈 때 새 탭에서 연다. dir에 안 보임 ($url)
+//   .gitkeep      → 빈 폴더 유지용. dir에 안 보임
+const REPO = 'EmptyBug/EmptyBug.github.io';
+const BRANCH = 'main';
+
+let FS = null;   // 불러오기 전에는 null. 폴더는 { }, 파일은 null
+
+async function loadFS() {
+  const res = await fetch(`https://api.github.com/repos/${REPO}/git/trees/${BRANCH}?recursive=1`);
+  if (!res.ok) throw new Error(res.status);
+  const { tree } = await res.json();
+
+  const root = {};
+  const urlFiles = [];   // [폴더 객체, url.txt 경로]
+
+  for (const { path, type } of tree) {
+    if (!path.startsWith('explore/')) continue;
+    const parts = path.split('/').slice(1);
+    const name = parts.pop();
+
+    // 부모 폴더 찾기 (about/ 안쪽이면 건너뜀)
+    if (parts.includes('about')) continue;
+    const parent = parts.reduce((d, n) => d[n] ??= {}, root);
+
+    if (name === 'about' && type === 'tree') parent.$about = true;
+    else if (name === 'url.txt')             urlFiles.push([parent, path]);
+    else if (name === '.gitkeep')            continue;
+    else parent[name] = type === 'tree' ? (parent[name] ?? {}) : null;
+  }
+
+  // url.txt는 미리 받아 둔다 (cd 순간에 받으면 새 탭이 팝업 차단됨)
+  await Promise.all(urlFiles.map(async ([dir, path]) => {
+    const r = await fetch(`https://raw.githubusercontent.com/${REPO}/${BRANCH}/${encodeURI(path)}`);
+    if (r.ok) dir.$url = (await r.text()).split('\n')[0].trim();
+  }));
+
+  FS = root;
+}
+
+const LOADING = '폴더 정보를 불러오는 중입니다.';
 
 // C:\Users 에 들어가면 보여줄 개인정보 (내용은 추후 채우기)
 const PROFILE = [
@@ -60,6 +86,7 @@ const commands = {
   about: {
     desc: '현재 폴더에 대한 설명을 보여줍니다.',
     run: () => {
+      if (!FS) return LOADING;
       if (!cwdDir().$about) return '이 폴더에 대한 설명이 아직 없습니다.';
       openAbout();
     },
@@ -67,6 +94,7 @@ const commands = {
   dir: {
     desc: '현재 위치의 파일과 폴더를 보여줍니다.',
     run: () => {
+      if (!FS) return LOADING;
       const rows = entries(cwdDir()).map(([name, v]) =>
         (v ? '<DIR>' : '').padEnd(10) + name);
       return [` ${cwdPath()} 디렉터리`, '', '<DIR>     .', '<DIR>     ..', ...rows].join('\n');
@@ -76,6 +104,7 @@ const commands = {
     desc: '위치를 이동합니다. (cd 폴더, cd ..)',
     run: arg => {
       if (!arg) return cwdPath();
+      if (!FS)  return LOADING;
 
       const next = [...cwd];
       for (const part of arg.split(/[\\/]/).filter(Boolean)) {
@@ -233,3 +262,5 @@ window.addEventListener('blur', () => {
 });
 
 print('help 를 입력하면 사용 가능한 명령어를 볼 수 있습니다.\n');
+
+loadFS().catch(() => print('폴더 정보를 불러오지 못했습니다. 새로고침해 주세요.\n'));
